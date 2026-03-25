@@ -6,12 +6,17 @@ classDiagram
     Pet "1" -- "*" Task : assigned
     TaskManager o-- Task : manages
     DailyPlanGenerator o-- Task : uses
+```mermaid
+classDiagram
+    Owner "1" -- "*" Pet : owns
+    Pet "1" -- "*" Task : assigned
+    Scheduler o-- Task : uses
 
     class Owner {
         +owner_id
         +name
         +contact_info
-        +pets
+        +pet_ids
         +add_pet()
         +remove_pet()
         +get_pets()
@@ -24,10 +29,11 @@ classDiagram
         +breed
         +age
         +medical_info
-        +owner
-        +tasks
+        +owner_id
+        +task_ids
         +add_task()
-        +remove_task()
+        +edit_task()
+        +delete_task()
         +get_tasks()
         +update_info()
     }
@@ -37,20 +43,12 @@ classDiagram
         +category
         +due_date
         +status
-        +assigned_pet
+        +assigned_pet_id
         +mark_complete()
         +edit_task()
         +delete_task()
     }
-    class TaskManager {
-        +tasks
-        +add_task()
-        +edit_task()
-        +delete_task()
-        +get_tasks()
-        +assign_task_to_pet()
-    }
-    class DailyPlanGenerator {
+    class Scheduler {
         +tasks
         +constraints
         +plan

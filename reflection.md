@@ -12,12 +12,35 @@
 - Briefly describe your initial UML design.
 - What classes did you include, and what responsibilities did you assign to each?
 
-Initially this was my design: 
+
+Initial Design:
+*Owner Class*
+Attributes: owner_id, name, contact_info, pets (Pet List)
+Methods: add_pet(), remove_pet(), get_pets(), update_info()
+
+*Pet Class*
+Attributes: pet_id, name, species, breed, age, medical_info, owner (Owner), tasks (list of Task)
+Methods: add_task(), remove_task(), get_tasks(), update_info()
+
+*Task Class*
+Attributes: task_id, description, category, due_date, status, assigned_pet (Pet)
+Methods: mark_complete(), edit_task(), delete_task()
+
+*TaskManager  Class*
+Attributes: tasks (list of Task)
+Methods: add_task(), edit_task(), delete_task(), get_tasks(), assign_task_to_pet()
+
+*DailyPlanGenerator Class*
+Attributes: tasks (list of Task), constraints (e.g., pet schedule, owner availability), plan
+Methods: generate_plan(), explain_reasoning(), update_constraints(), get_plan()
 
 **b. Design changes**
 
 - Did your design change during implementation?
 - If yes, describe at least one change and why you made it.
+
+CoPilot mentioned that there is a circular reference of Owner -> Pet -> Owner. So, I wanted to remove a cause for a potential infinite loop. Thus, I decided to use IDs so that Pet and Task use only IDs for references, and remove the direct object references, which would make serialization and data management easier.
+
 
 ---
 
