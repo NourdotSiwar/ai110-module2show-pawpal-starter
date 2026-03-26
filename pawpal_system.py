@@ -1,20 +1,48 @@
 # Logic layer for PawPal system
+
 from dataclasses import dataclass, field
 from typing import List, Optional, Dict
+from datetime import datetime, timedelta
+
 
 
 @dataclass
 class Task:
     task_id: int
     description: str
-    time: str
-    frequency: str
+    time: str  # "HH:MM"
+    frequency: str  # "Daily", "Weekly", etc.
+    date: str = None  # "YYYY-MM-DD" (optional, for recurring logic)
     status: str = "incomplete"
     assigned_pet_id: Optional[int] = None
 
-    def mark_complete(self):
-        """Mark the task as complete."""
+    def mark_complete(self, tasks_registry=None, auto_recur=True):
+        """Mark the task as complete. If recurring, auto-create next occurrence."""
         self.status = "complete"
+        if auto_recur and self.frequency.lower() in ("daily", "weekly") and tasks_registry is not None:
+            # Parse current date
+            if self.date:
+                current_date = datetime.strptime(self.date, "%Y-%m-%d")
+            else:
+                current_date = datetime.today()
+            # Calculate next date
+            if self.frequency.lower() == "daily":
+                next_date = current_date + timedelta(days=1)
+            elif self.frequency.lower() == "weekly":
+                next_date = current_date + timedelta(weeks=1)
+            else:
+                return
+            # Create new task instance for next occurrence
+            new_task_id = max(tasks_registry.keys(), default=0) + 1
+            new_task = Task(
+                task_id=new_task_id,
+                description=self.description,
+                time=self.time,
+                frequency=self.frequency,
+                date=next_date.strftime("%Y-%m-%d"),
+                assigned_pet_id=self.assigned_pet_id
+            )
+            tasks_registry[new_task_id] = new_task
 
     def edit_task(self, **kwargs):
         """Edit task attributes."""
@@ -96,6 +124,59 @@ class Owner:
 
 
 class Scheduler:
+    def detect_conflicts(self):
+        """
+        Detect tasks scheduled at the same time for the same or different pets.
+        Returns:
+            List[str]: List of warning messages for detected conflicts.
+        Notes:
+            Only exact time and date matches are considered as conflicts.
+        """
+        warnings = []
+        seen = {}
+        for task in self.tasks:
+            # Use (date, time) as key, include pet for more detail
+            key = (getattr(task, 'date', None), task.time)
+            if key in seen:
+                other = seen[key]
+                msg = (
+                    f"Warning: Task '{task.description}' (Pet ID: {task.assigned_pet_id}) "
+                    f"conflicts with '{other.description}' (Pet ID: {other.assigned_pet_id}) at {task.time} "
+                    f"on {getattr(task, 'date', 'N/A')}."
+                )
+                warnings.append(msg)
+            else:
+                seen[key] = task
+        return warnings
+    def filter_by_status(self, status: str):
+        """
+        Filter tasks by their completion status.
+        Args:
+            status (str): The status to filter by (e.g., 'complete', 'incomplete').
+        Returns:
+            List[Task]: List of Task objects matching the given status.
+        """
+        return [task for task in self.tasks if getattr(task, 'status', None) == status]
+
+    def filter_by_pet_name(self, pets: dict, pet_name: str):
+        """
+        Filter tasks assigned to a pet with the given name.
+        Args:
+            pets (dict): Dictionary of pet_id to Pet objects.
+            pet_name (str): The name of the pet to filter by.
+        Returns:
+            List[Task]: List of Task objects assigned to the specified pet name.
+        """
+        pet_ids = [pid for pid, pet in pets.items() if getattr(pet, 'name', None) == pet_name]
+        return [task for task in self.tasks if getattr(task, 'assigned_pet_id', None) in pet_ids]
+    def sort_by_time(self):
+        """
+        Sort tasks by their time attribute (HH:MM format).
+        Returns:
+            List[Task]: List of Task objects sorted by time.
+        """
+        self.tasks = sorted(self.tasks, key=lambda t: tuple(map(int, t.time.split(":"))))
+        return self.tasks
     def __init__(self, tasks: List[Task], constraints=None):
         self.tasks = tasks
         self.constraints = constraints

@@ -41,7 +41,6 @@ Methods: generate_plan(), explain_reasoning(), update_constraints(), get_plan()
 
 CoPilot mentioned that there is a circular reference of Owner -> Pet -> Owner. So, I wanted to remove a cause for a potential infinite loop. Thus, I decided to use IDs so that Pet and Task use only IDs for references, and remove the direct object references, which would make serialization and data management easier.
 
-
 ---
 
 ## 2. Scheduling Logic and Tradeoffs
@@ -51,10 +50,15 @@ CoPilot mentioned that there is a circular reference of Owner -> Pet -> Owner. S
 - What constraints does your scheduler consider (for example: time, priority, preferences)?
 - How did you decide which constraints mattered most?
 
+- The scheduler primarily considers the time each task is scheduled for, ensuring tasks are ordered and checked for conflicts based on their time and date.
+- Time was chosen as the most important constraint because, for pet care, making sure tasks do not overlap and are performed at the correct times is critical for the pets' well-being and the owner's routine. Other constraints like priority or preferences could be added in the future.
 **b. Tradeoffs**
 
 - Describe one tradeoff your scheduler makes.
 - Why is that tradeoff reasonable for this scenario?
+
+- One tradeoff the scheduler makes is that it only checks for exact time matches (tasks scheduled at the same hour and minute) when detecting conflicts, rather than considering overlapping durations or tasks that might partially overlap.
+- This tradeoff is reasonable because most pet care tasks in this context are short and occur at specific times (like feeding or walking), so exact time conflicts are the most likely and relevant issue. This approach keeps the conflict detection logic simple and efficient, which is appropriate for a lightweight scheduling app.
 
 ---
 
